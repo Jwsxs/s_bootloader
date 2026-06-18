@@ -75,3 +75,6 @@ E os últimos 2 bytes ( WORD ), com nossa **assinatura** de bootloader.
 .byte 0x55
 .byte 0xaa
 ```
+
+### Adendo
+De resto, tanta coisa específica que guardei para comentários ao longo do código: `./boot_rm.s`
