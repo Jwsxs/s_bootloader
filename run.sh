@@ -45,4 +45,4 @@ else
 	echo -e "Some kinda error occurred!\n"
 fi
 
-rm "$BOOT_L" "obj.o"
+# rm "$BOOT_L" "obj.o"

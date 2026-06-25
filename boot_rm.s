@@ -22,31 +22,46 @@ _start:
 	# assim para chamar o kernel / os, antes verificando se é possivel tal, ou se não vai comer o pc
 	mov	$0xe8, %ah # bios interrupt call wikipedia => Get Extended Memory Size (Newer function, since 1994). Gives results for memory size above 64 Mb.
 	mov	$0x20, %al # bios inteerupt call wikipedia => Query System Address Map. The information returned from E820 supersedes what is returned from the older AX=E801h and AH=88h interfaces.
-	# para detectar "upper memory" -> 0xA0000 para 0xFFFFF, a melhor maneira é a chamada INT 15h com as sub ah e al
+	# para detectar "upper memory" -> 0xA0000 para 0xFFFFF, a melhor maneira é a chamada INT 15h com as sub ah e820 e al 20
 	int	$0x15
-	
+
 	# o feito aqui foi só receber RAM disponível..
-	
-	# porém, tem um jeito mais "seguro", que mapeia a memória física e vai ser mandado para um "gerenciador"
+
+	# agora, de um jeito mais "seguro", que mapeia a memória física e vai ser mandado para um "gerenciador"
 	# no caso, a os recebe e entende (feito pelo dev no caso) quais endereços podem ser usáveis ou não
 
 # physical memory manager
-# .pmm_checker:
+.pmm_checker:
 	# aponta ES:DI (o endereço) para o buffer the destino de uma lista -> essa que contém endereços livres
-	# xor %ebx, %ebx # limpo ebx,
-	# mov $0x534D4150, %edx # seto edx com esse número dos deuses
+	xor %ebx, %ebx # limpo ebx,
+	# para zerar nosso ES:
+	mov $0x0000, %ax
+	mov %ax, %es # não é possível passar 0x0000 direto para %es por restrição do hardware, já que é registro de segmento
+	mov $0x0500, %di # setando o offset como 0x0500, endereço que começa um espaço livre, seguido pelo bootloader e então mais espaço livre
 	
-	# xor %ah, %ah # "high" parte do acumulador deve ser 0
-	# mov $0xe820, %eax # chamada de interrupt da bios para Get Extended Memory Size
-	# mov $24, %ecx # 8bytes base + 8bytes len + 4bytes type + 4bytes attr = 24
+._pc_l1:
+	clc # e limpo qualquer flag
+	mov $0x534D4150, %edx # seto edx com esse número dos deuses
+	
+	xor %ah, %ah # "high" parte do acumulador deve ser 0
+	mov $0xe820, %eax # chamada de interrupt da bios para Get Extended Memory Size
+	mov $24, %ecx # 8bytes base + 8bytes len + 4bytes type + 4bytes attr = 24
 			# no final é uma estrutura que mapeia cada região da memória
-	# int $0x15 # chamo a bios
+	int $0x15 # chamo a bios
 
 	# se tudo der certo, %eax é setado com o número mágico e a carry flag vai ser resetada
-	# %ebx recebe algum número diferente de zero, que deve ser usado posteriormente
+	jc .ERROR # por isso verifico se não mudou nada nela
+	# %ebx recebe algum número diferente de zero, que deve ser usado posteriormente -> caso seja 0, encerra
 	# %cl (8-bit "lower" do %ecx) recebe o número de bytes guardados em ES:DI -> diz ser geralmente 20
-	# então seta tudo novamente (menos zerando ebx), adiciono 24 ao index de destino e continua
+	add $24, %di # adiciono 24 ao index de destino e continua
 	# de endereço em endereço é assim que se mapeia a memória
+	cmp $0, %ebx
+	je ._fin
+
+	jmp ._pc_l1 # então seta tudo novamente (menos zerando ebx),
+
+._fin:
+	#placeholder
 
 .include "./incl/_errors.s"
 .include "./incl/boot_print.s"
