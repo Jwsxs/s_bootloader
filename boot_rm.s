@@ -37,7 +37,7 @@ _start:
 	# para zerar nosso ES:
 	mov $0x0000, %ax
 	mov %ax, %es # não é possível passar 0x0000 direto para %es por restrição do hardware, já que é registro de segmento
-	mov $0x0500, %di # setando o offset como 0x0500, endereço que começa um espaço livre, seguido pelo bootloader e então mais espaço livre
+	mov $0x8000, %di # setando o offset como 0x0500, endereço que começa um espaço livre, seguido pelo bootloader e então mais espaço livre
 	
 ._pc_l1:
 	clc # e limpo qualquer flag
@@ -55,13 +55,26 @@ _start:
 	# %cl (8-bit "lower" do %ecx) recebe o número de bytes guardados em ES:DI -> diz ser geralmente 20
 	add $24, %di # adiciono 24 ao index de destino e continua
 	# de endereço em endereço é assim que se mapeia a memória
+	
 	cmp $0, %ebx
-	je ._fin
+	je .load_kernel
 
 	jmp ._pc_l1 # então seta tudo novamente (menos zerando ebx),
 
-._fin:
-	#placeholder
+.load_kernel:
+	# the physical address for the kernel binary will be loaded at $0x0500
+	# to load these things, we'd use ES:BX, instead of DI.
+	# that way, ES can be set to 0x0050 and BX like 0x0000, since: Address = (ES << 4) + OFFSET
+	xor %bx, %bx
+	mov $0x0050, %ax
+	mov %ax, %es
+
+._lk1:
+	# then we load the kernel binary memory by calling int $0x13, with ax 0x02 => reading hdd sectors
+	# we'd pass it the control, changing from real_mode to protected mode
+	# and, like that, our kernel is loaded
+	
+	# if any, pre-configured pmm reader on the kernel will get it from the one we set above
 
 .include "./incl/_errors.s"
 .include "./incl/boot_print.s"
