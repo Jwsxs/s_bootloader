@@ -37,7 +37,7 @@ _start:
 	# para zerar nosso ES:
 	mov $0x0000, %ax
 	mov %ax, %es # não é possível passar 0x0000 direto para %es por restrição do hardware, já que é registro de segmento
-	mov $0x8000, %di # setando o offset como 0x0500, endereço que começa um espaço livre, seguido pelo bootloader e então mais espaço livre
+	mov $0x0800, %di # setando o offset como 0x8000, endereço que começa um espaço livre, seguido pelo bootloader e então mais espaço livre
 	
 ._pc_l1:
 	clc # e limpo qualquer flag
@@ -70,11 +70,33 @@ _start:
 	mov %ax, %es
 
 ._lk1:
+	# loading our kernel into HDD disk
+
+	# C:H:S
+	mov $0, %ch # cylinder
+	mov $0, %dh # head
+	mov $2, %cl # sector
+	mov $0x80, %dl
+	mov $1, %al
+
+	mov $0x02, %ah # read sectors interrupt call
+	int $0x13 # int call for low-level services
+	
+	jc .ERROR
 	# then we load the kernel binary memory by calling int $0x13, with ax 0x02 => reading hdd sectors
 	# we'd pass it the control, changing from real_mode to protected mode
 	# and, like that, our kernel is loaded
-	
 	# if any, pre-configured pmm reader on the kernel will get it from the one we set above
+
+.protected_mode:
+	# lgdt $0x0, # LOAD GDT
+
+	cli
+
+	mov $0x2401, %ax # a20 line
+	int $0x15
+
+	ljmp $0x0050, $0x0000
 
 .include "./incl/_errors.s"
 .include "./incl/boot_print.s"
