@@ -1,7 +1,7 @@
 #!/bin/bash
-SRC=./boot_rm.s
+SRC=./boot_rm.S
 
-BOOT_L=boot_l.bin
+BOOT_L=boot_rm
 
 LD_FLAGS="-Ttext 0x7c00 --oformat binary"
 AS_FLAGS=""
@@ -45,4 +45,4 @@ else
 	echo -e "Some kinda error occurred!\n"
 fi
 
-# rm "$BOOT_L" "obj.o"
+rm "$BOOT_L" "obj.o"

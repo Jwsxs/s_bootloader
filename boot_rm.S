@@ -14,17 +14,27 @@ _start:
 	# portanto:
 	jc	.ERROR # ./incl/_errors.s
 
-	#mov	$msg, %si
-	#call	boot_print
+	mov $msg, %si
+	call _print
 
-.include "./incl/_errors.s"
-.include "./incl/boot_print.s"
+	# reading the disk
+	# messing with memory data segment
 
-the_secret: .byte 'X'
+	#0x9000
+	mov $0x9000, %bx
+	mov $0x5, %dh
+	mov $0x80, %dl # hard disk 0x80
+	call disk_load
+
+	jmp .
+
+.include "./incl/_errors.S"
+.include "./incl/boot_print.S"
+.include "./incl/_disk.S"
+
 # .asciz = \0 no final já implementado automatic
 # .ascii = nenhum \0 no final, implementa manual
 msg: .asciz "Hello, welcome!\r\nBootloader (apparently) running fine!\r\n"
-
 # enche nosso espaço de memória, a partir de 0x0500 à 0x7ffff, com 0's
 # no linker > ./run.sh > depois é definido o _start em 0x07c00, no meio desse emaranhado
 # isso pois de 0x07c00 à 0x07dff é o setor de Boot da OS, 512 bytes no total
