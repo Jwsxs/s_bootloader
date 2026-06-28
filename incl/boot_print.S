@@ -1,8 +1,6 @@
 .code16
 
-boot_print:
-	# push all registers to stack
-	pusha
+_print:
 	# print function have to be on %ah
 	mov	$0x0e, %ah
 .l1:
@@ -19,5 +17,4 @@ boot_print:
 	jmp	.l1
 
 _done:
-	pop	%bx # 
 	ret
